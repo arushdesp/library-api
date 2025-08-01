@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// User model for authentication and user management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  borrowedBooks BorrowedBook[]
+  books         Book[]
+}
+
+// Book model for library inventory
+model Book {
+  id          String   @id @default(cuid())
+  title       String
+  author      String
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  isbn        String   @unique
+  description String?
+  genre       String?
+  publishedYear Int?
+  totalCopies Int      @default(1)
+  availableCopies Int  @default(1)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  borrowedBooks BorrowedBook[]
+
+  @@map("books")
+}
+
+// BorrowedBook model for tracking book loans
+model BorrowedBook {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  borrowedAt DateTime @default(now())
+  dueDate   DateTime
+  returnedAt DateTime?
+  isOverdue Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  book      Book     @relation(fields: [bookId], references: [id])
+
+  @@unique([userId, bookId, returnedAt])
+  @@map("borrowed_books")
+}
+
+// User roles for role-based access control
+enum UserRole {
+  USER
+  ADMIN
+  LIBRARIAN
+}
